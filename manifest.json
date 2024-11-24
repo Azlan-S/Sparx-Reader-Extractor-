@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Sparx Reader Extractor",
+  "version": "0.5.8",
+  "description": "Extract text from Sparx Reader and copy it to an AI Chatbot to automatically complete homework.",
+  "permissions": ["activeTab", "scripting", "clipboardWrite"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_title": "Load Text Extractor",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["help.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
