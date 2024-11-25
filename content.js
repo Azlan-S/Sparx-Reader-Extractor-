@@ -9,8 +9,8 @@ function createOverlayUI() {
   const overlay = document.createElement("div");
   overlay.id = "custom-text-extractor-overlay";
   overlay.style.position = "fixed";
-  overlay.style.top = "80px"; // Default position moved slightly upward
-  overlay.style.right = "100px"; // Default position moved slightly left
+  overlay.style.top = "80px";
+  overlay.style.right = "100px";
   overlay.style.width = "350px";
   overlay.style.height = "auto";
   overlay.style.maxHeight = "300px";
@@ -21,7 +21,7 @@ function createOverlayUI() {
   overlay.style.zIndex = "10000";
   overlay.style.fontFamily = "'Korto', sans-serif";
   overlay.style.overflow = "hidden";
-  overlay.style.cursor = "grab"; // Indicate draggable functionality
+  overlay.style.cursor = "grab";
 
   // Create the header
   const header = document.createElement("div");
@@ -32,7 +32,7 @@ function createOverlayUI() {
   header.style.fontWeight = "bold";
   header.style.textAlign = "center";
   header.style.position = "relative";
-  header.style.cursor = "grab"; // Make the header draggable
+  header.style.cursor = "grab";
 
   const headerText = document.createElement("div");
   headerText.innerText = "Sparx Reader Extractor";
@@ -89,6 +89,17 @@ function createOverlayUI() {
     </button>
   `;
 
+  // Add a message area for success messages
+  const messageArea = document.createElement("div");
+  messageArea.id = "successMessage";
+  messageArea.style.marginTop = "15px";
+  messageArea.style.textAlign = "center";
+  messageArea.style.color = "green";
+  messageArea.style.fontWeight = "bold";
+  messageArea.style.fontSize = "14px";
+  messageArea.style.visibility = "hidden"; // Initially hidden
+  content.appendChild(messageArea);
+
   overlay.appendChild(content);
   document.body.appendChild(overlay);
 
@@ -101,13 +112,52 @@ function createOverlayUI() {
   });
 
   // Add event listeners for the buttons
-  document.getElementById("extractTextButton").addEventListener("click", extractTextAndCopy);
-  document.getElementById("extractQuestionsButton").addEventListener("click", extractQuestionsAndCopy);
+  document.getElementById("extractTextButton").addEventListener("click", async () => {
+    try {
+      const extractedText = extractText();
+      await navigator.clipboard.writeText(extractedText);
+      showSuccessMessage("Reading text copied to clipboard!");
+    } catch (error) {
+      console.error("Error extracting and copying text:", error);
+      showSuccessMessage("Error: Could not copy text.", true);
+    }
+  });
 
-  // Add event listener to "I need Help" button
+  document.getElementById("extractQuestionsButton").addEventListener("click", async () => {
+    try {
+      const questionsAndAnswers = extractQuestions();
+
+      if (!questionsAndAnswers) {
+        showSuccessMessage("No questions/answers found.", true);
+        return;
+      }
+
+      await navigator.clipboard.writeText(questionsAndAnswers);
+      showSuccessMessage("Questions & answers copied to clipboard!");
+    } catch (error) {
+      console.error("Error extracting questions and answers:", error);
+      showSuccessMessage("Error: Could not copy questions.", true);
+    }
+  });
+
   document.getElementById("helpButton").addEventListener("click", () => {
     window.open(chrome.runtime.getURL("help.html"), "_blank");
   });
+}
+
+// Function to show success or error messages
+function showSuccessMessage(message, isError = false) {
+  const messageArea = document.getElementById("successMessage");
+  if (messageArea) {
+    messageArea.textContent = message;
+    messageArea.style.color = isError ? "red" : "green";
+    messageArea.style.visibility = "visible";
+
+    // Hide the message after 3 seconds
+    setTimeout(() => {
+      messageArea.style.visibility = "hidden";
+    }, 3000);
+  }
 }
 
 // Function to make the overlay draggable
@@ -119,9 +169,9 @@ function makeOverlayDraggable(overlay, header) {
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
-    initialX = parseInt(overlay.style.right) || 100; // Default right position
-    initialY = parseInt(overlay.style.top) || 50; // Default top position
-    overlay.style.cursor = "grabbing"; // Indicate dragging
+    initialX = parseInt(overlay.style.right) || 100;
+    initialY = parseInt(overlay.style.top) || 50;
+    overlay.style.cursor = "grabbing";
   });
 
   document.addEventListener("mousemove", (e) => {
@@ -137,43 +187,9 @@ function makeOverlayDraggable(overlay, header) {
   document.addEventListener("mouseup", () => {
     if (isDragging) {
       isDragging = false;
-      overlay.style.cursor = "grab"; // Reset cursor
+      overlay.style.cursor = "grab";
     }
   });
-}
-
-// Function to extract and copy the reading text
-async function extractTextAndCopy() {
-  try {
-    const extractedText = extractText();
-    await navigator.clipboard.writeText(extractedText);
-    alert("Copied to clipboard!");
-  } catch (error) {
-    console.error("Error extracting and copying text:", error);
-    alert("An error occurred while extracting text. Check the console for details.");
-  }
-}
-
-// Function to extract and copy questions and answers
-async function extractQuestionsAndCopy() {
-  try {
-    const questionsAndAnswers = extractQuestions();
-
-    if (!questionsAndAnswers) {
-      alert(
-        'No questions/answers found [You are on the wrong page].\n\nSwitch to the questions page by clicking "I have read up to here".'
-      );
-      console.warn("No questions/answers found. User is on the wrong page.");
-      return;
-    }
-
-    await navigator.clipboard.writeText(questionsAndAnswers);
-    alert("Copied to clipboard!");
-    console.log("Copied to clipboard (questions and answers):", questionsAndAnswers);
-  } catch (error) {
-    console.error("Error extracting questions and answers:", error);
-    alert("An error occurred while extracting questions and answers. Check the console for details.");
-  }
 }
 
 // Function to extract the reading text between "Start reading here" and "Stop reading here"
